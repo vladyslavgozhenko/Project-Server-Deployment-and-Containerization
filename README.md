@@ -86,3 +86,84 @@ Completing the project involves several steps:
 6. Create a CodeBuild stage which will build, test, and deploy your code
 
 For more detail about each of these steps, see the project lesson.
+
+
+## Local run/check
+1. set JWT_SECRET and LOG_LEVEL in .env_file
+- _JWT_SECRET_ - The text string to be used for creating the JWT.
+    - _LOG_LEVEL_ - It represents the level of logging. It is optional to be set. It has a default value as 'INFO', but when debugging an app locally, you may want to set it to 'DEBUG'.
+2. execute
+```
+docker run --env-file .env_file -p 8080:8080 simple-jwt-api
+```
+
+Check whether Flask service is available:
+1. Open the link in a browser : "http://localhost"
+It should return text "Healthy"
+
+or  use:
+curl.exe --request GET  http://localhost
+Result: "Healthy"
+
+2.  Data encryption to the token works fine:
+ for /f "delims=" %i in ('curl.exe -s --data "{\"email\":\"abc@xyz.com\",\"password\":\"mypwd\"}" -H "Content-Type: application/json" -X POST http://localhost/auth ^| jq.exe -r ".token"') do set "TOKEN=%i"
+
+Token was generated/data encrypted: 
+set "TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3OTQwNzQxODgsIm5iZiI6MTc5Mjg2NDU4OCwiZW1haWwiOiJhYmNAeHl6LmNvbSJ9.-11UHKSrNwts9tVmU7Hb4duvb8x3bZdPaKK-E4m7m8w"
+
+3. Data decryption:
+
+curl.exe --request GET "http://localhost/contents" -H "Authorization: Bearer %TOKEN%" | jq.exe .
+
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+100     58 100     58   0      0    182      0                              0
+{
+  "email": "abc@xyz.com",
+  "exp": 1794074188,
+  "nbf": 1792864588
+}
+
+## Remote run/check
+1. Online Flask service is available:
+
+curl.exe --request GET  afc60e59c23ff4b52b3f9de84df07317-116254502.us-east-1.elb.amazonaws.com
+Result: "Healthy"
+
+2.  Data encryption to the token works fine:
+ for /f "delims=" %i in ('curl.exe -s --data "{\"email\":\"abc@xyz.com\",\"password\":\"mypwd\"}" -H "Content-Type: application/json" -X POST http://afc60e59c23ff4b52b3f9de84df07317-116254502.us-east-1.elb.amazonaws.com/auth ^| jq.exe -r ".token"') do set "TOKEN=%i"
+
+Token was generated/data encrypted: 
+set "TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3OTQwNzQxODgsIm5iZiI6MTc5Mjg2NDU4OCwiZW1haWwiOiJhYmNAeHl6LmNvbSJ9.-11UHKSrNwts9tVmU7Hb4duvb8x3bZdPaKK-E4m7m8w"
+
+3. Data decryption:
+
+curl.exe --request GET "http://afc60e59c23ff4b52b3f9de84df07317-116254502.us-east-1.elb.amazonaws.com/contents" -H "Authorization: Bearer %TOKEN%" | jq.exe .
+
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+100     58 100     58   0      0    182      0                              0
+{
+  "email": "abc@xyz.com",
+  "exp": 1794074188,
+  "nbf": 1792864588
+}
+
+4. Check kubernetes nodes availability:
+kubectl get nodes
+NAME                             STATUS   ROLES    AGE   VERSION
+ip-192-168-17-166.ec2.internal   Ready    <none>   53m   v1.36.5-eks-117f323
+ip-192-168-42-131.ec2.internal   Ready    <none>   53m   v1.36.5-eks-117f323
+
+5. Check pods availability:
+kubectl get pods
+NAME                              READY   STATUS    RESTARTS   AGE
+simple-jwt-api-5ccdccfd57-4bdwh   1/1     Running   0          27m
+simple-jwt-api-5ccdccfd57-6z2kx   1/1     Running   0          27m
+simple-jwt-api-5ccdccfd57-nqltl   1/1     Running   0          27m
+
+6. Get svc:
+kubectl get svc
+NAME             TYPE           CLUSTER-IP       EXTERNAL-IP                                                              PORT(S)        AGE
+kubernetes       ClusterIP      10.100.0.1       <none>                                                                   443/TCP        61m
+simple-jwt-api   LoadBalancer   10.100.239.159   afc60e59c23ff4b52b3f9de84df07317-116254502.us-east-1.elb.amazonaws.com   80:30774/TCP   42m

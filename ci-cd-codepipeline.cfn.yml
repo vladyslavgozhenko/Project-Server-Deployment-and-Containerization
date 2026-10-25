@@ -264,10 +264,12 @@ Resources:
                 Effect: Allow
                 Action:
                   - eks:Describe*
-              - Resource: '*'
+              - Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/JWT_SECRET
                 Effect: Allow
                 Action:
+                  - ssm:GetParameter
                   - ssm:GetParameters
+                  - ssm:GetParameterHistory
               - Resource: '*'
                 Effect: Allow
                 Action:
